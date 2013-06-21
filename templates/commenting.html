@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Bootstrap 101 Template</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Bootstrap -->
+    <link href="../static/bootstrap/css/bootstrap.min.css" rel="stylesheet" media="screen">
+    <style>
+        body
+        {
+            padding:10px;
+        }
+    </style>
+</head>
+<body>
+    <p>
+    <form action="/" method="post" class="add-entry">
+        <textarea rows="3" name=comment>
+        </textarea>
+    </p>
+    <p><button class="btn-primary" type="submit">Comment</button>
+    </p>
+    </form>
+    {% set count = 1 %}
+        {% for comment in comments %}
+    <div class="row-fluid">
+        <div class="span4 offset{{comment.indentation+1}}" id="text-{{count}}">
+            {{comment.text}}
+        </div>
+    </div>
+    <div class="row-fluid">
+    <div class="span4 offset{{comment.indentation+1}}"
+         id="comment-{{count}}">
+        <button class="btn-primary" id="btn-{{count}}"
+                onclick="AddReplyBox('{{count}}')">Reply</button>
+    </div>
+    </div>
+        {% set count = count + 1 %}
+        {% endfor %}
+<script src="../static/bootstrap/js/bootstrap.min.js"></script>
+<script src="//ajax.googleapis.com/ajax/libs/jquery/1.10.1/jquery.min.js"></script>
+<script>
+    function AddReplyBox(count)
+    {
+        var parent_comment = document.getElementById('text-'+count).innerHTML;
+        $('#btn-'+count).remove();
+        $('#comment-'+count).append(
+                "<form action='/' method='post' class='add-entry'>" +
+                "<textarea rows='3' name=reply></textarea>" +
+                "<input type='hidden' name='parent' value='" + parent_comment +"'>"+
+                "<p><button class='btn-primary' type='submit'> Reply</button></p></form>");
+    };
+</script>
+</body>
+</html>
