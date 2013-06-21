@@ -3,91 +3,66 @@ __author__ = 'samportnow'
 from flask import Flask, request, session, url_for, render_template, redirect
 from flask.ext.pymongo import PyMongo
 import datetime
-import bson
 import pymongo
-import re
+from bson.objectid import ObjectId
 
 app = Flask(__name__)
 mongo = PyMongo(app)
 
-
 @app.route('/', methods=['GET','POST'])
 def home():
     if request.method == 'POST':
-        if 'comment' in request.form:
-            get_comment()
-        elif 'reply' in request.form:
-            get_reply()
-    cursor = mongo.db.comments.find({'parent':{'$exists':False}})
+        add_comment()
+    cursor = mongo.db.comments.find({'parent': None})
     comments = get_all_comments(cursor=cursor)
-    print 'found %d comments' % (len(comments))
     return render_template('commenting.html', comments=comments)
 
-_punct_re = re.compile(r'[\t !"#$%&\'()*\-/<=>?@\[\\\]^_`{|},.]+')
+def add_comment():
+    """ Add a comment or reply. """
 
-def slugify(text, delim=u'-'):
-    """Generates an ASCII-only slug."""
-    text=text.strip()
-    result = []
-    for word in _punct_re.split(text.lower()):
-        if word:
-            result.append(word)
-    return unicode(delim.join(result))
+    # Validate parent ID
+    parent_id = request.form.get('parent', None)
+    if parent_id:
+        parent_id = ObjectId(parent_id)
+        if not mongo.db.comments.find({'_id' : parent_id}).count():
+            raise Exception('Parent ID doesn\'t exist.')
 
+    # Validate indent
+    indent = request.form.get('indent', 0)
+    if indent:
+        try:
+            indent = int(indent)
+        except ValueError:
+            raise Exception('Indent must be int-convertible.')
 
-def get_comment():
     posted = datetime.datetime.utcnow()
     text = request.form['comment']
-    slug = slugify(text)
-    full_slug = posted.strftime('%Y.%m.%d.%H.%M.%S') + ':' + slug
-    mongo.db.comments.insert({
-        'slug':slug,
-        'full_slug':full_slug,
+    new_id = mongo.db.comments.insert({
         'posted':posted,
         'text': text,
+        'parent' : parent_id,
+        'indentation' : indent,
+        'children' : [],
     })
-    return redirect(url_for('home'))
 
-def get_reply():
-    posted = datetime.datetime.utcnow()
-    text = request.form['reply']
-    slug_part = slugify(text)
-    full_slug_part = posted.strftime('%Y.%m.%d.%H.%M.%S') + ':' + slug_part
-    parent = request.form['parent']
-    parent_slug = slugify(parent)
-    full_slug = parent_slug + '/' + full_slug_part
-    mongo.db.comments.update(
-        {'slug':parent_slug},
-        {'$push': {'children': {
-            'slug':slug_part,
-            'full_slug':full_slug,
-    }}})
-    mongo.db.comments.insert(
-        {
-            'slug':slug_part,
-            'full_slug':full_slug,
-            'posted':posted,
-            'text': text,
-            'parent': parent_slug
-        }
-    )
-    return redirect(url_for('home'))
-
-def get_all_comments(cursor=None, index=0, comments=None):
-    if comments is None:
-        comments = []
-    for comment in cursor:
+    if parent_id:
         mongo.db.comments.update(
-            {'full_slug':comment['full_slug']},
-                {
-                '$set':{'indentation':index},
-                }
-            )
-        comment['indentation'] = index
+            {'_id' : parent_id},
+            {'$push': {'children': {
+                'ref_id' : str(new_id),
+                }}})
+
+    # Refresh home page
+    return redirect(url_for('home'))
+
+def get_all_comments(cursor=None):
+    comments = []
+    for comment in cursor:
         comments.append(comment)
-        if 'children' in comment:
-            for child in comment['children']:
-                get_all_comments(mongo.db.comments.find({'full_slug':child['full_slug']}), index+1, comments=comments)
+        for child in comment['children']:
+            comments += get_all_comments(
+                mongo.db.comments.find({'_id':ObjectId(child['ref_id'])})
+            )
     return comments
 
 if __name__ == '__main__':

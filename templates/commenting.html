@@ -24,7 +24,7 @@
     {% set count = 1 %}
         {% for comment in comments %}
     <div class="row-fluid">
-        <div class="span4 offset{{comment.indentation}}" id="text-{{count}}">
+        <div class="span4 offset{{comment.indentation}}" id="text-{{count}}" data-id="{{comment._id}}">
             {{comment.text}}
         </div>
     </div>
@@ -32,7 +32,7 @@
     <div class="span4 offset{{comment.indentation}}"
          id="comment-{{count}}">
         <button class="btn-primary" id="btn-{{count}}"
-                onclick="AddReplyBox('{{count}}')">Reply</button>
+                onclick="AddReplyBox('{{count}}', '{{comment.indentation+1}}')">Reply</button>
     </div>
     </div>
         {% set count = count + 1 %}
@@ -40,14 +40,17 @@
 <script src="../static/bootstrap/js/bootstrap.min.js"></script>
 <script src="//ajax.googleapis.com/ajax/libs/jquery/1.10.1/jquery.min.js"></script>
 <script>
-    function AddReplyBox(count)
+    function AddReplyBox(count, indentation)
     {
-        var parent_comment = document.getElementById('text-'+count).innerHTML;
+        var parent_id = document.getElementById('text-'+count)
+            .getAttribute('data-id');
+
         $('#btn-'+count).remove();
         $('#comment-'+count).append(
                 "<form action='/' method='post' class='add-entry'>" +
-                "<textarea rows='3' name=reply></textarea>" +
-                "<input type='hidden' name='parent' value='" + parent_comment +"'>"+
+                "<textarea rows='3' name=comment></textarea>" +
+                "<input type='hidden' name='parent' value='" + parent_id +"'>"+
+                "<input type='hidden' name='indent' value='" + indentation + "'>"+
                 "<p><button class='btn-primary' type='submit'> Reply</button></p></form>");
     };
 </script>
