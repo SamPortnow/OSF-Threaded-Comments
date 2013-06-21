@@ -18,8 +18,9 @@ def home():
             get_comment()
         elif 'reply' in request.form:
             get_reply()
-    cursor = mongo.db.comments.find()
+    cursor = mongo.db.comments.find({'parent':{'$exists':False}})
     comments = get_all_comments(cursor=cursor)
+    print 'found %d comments' % (len(comments))
     return render_template('commenting.html', comments=comments)
 
 _punct_re = re.compile(r'[\t !"#$%&\'()*\-/<=>?@\[\\\]^_`{|},.]+')
@@ -72,26 +73,21 @@ def get_reply():
     )
     return redirect(url_for('home'))
 
-def get_all_comments(cursor=None, index=-1, comments=[]):
-    visited = False
+def get_all_comments(cursor=None, index=0, comments=None):
+    if comments is None:
+        comments = []
     for comment in cursor:
-        for placed_comment in comments:
-            if comment['full_slug'] == placed_comment['full_slug']:
-                visited = True
-        if not visited:
-            mongo.db.comments.update(
-                {'full_slug':comment['full_slug']},
+        mongo.db.comments.update(
+            {'full_slug':comment['full_slug']},
                 {
                 '$set':{'indentation':index},
                 }
             )
-            comment['indentation'] = index
-            comments.append(comment)
+        comment['indentation'] = index
+        comments.append(comment)
         if 'children' in comment:
             for child in comment['children']:
-                index = comment['indentation'] + 1
-                get_all_comments(mongo.db.comments.find({'full_slug':child['full_slug']}), index, comments=comments)
-        index = -1
+                get_all_comments(mongo.db.comments.find({'full_slug':child['full_slug']}), index+1, comments=comments)
     return comments
 
 if __name__ == '__main__':
