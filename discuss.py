@@ -21,8 +21,7 @@ def home():
     cursor = mongo.db.comments.find({'parent': None})
     #once we have this cursor, we look up all the comments
     comments = get_all_comments(cursor=cursor)
-    print comments
-    return render_template('commenting.html', comment_groups=comments)
+    return render_template('commenting.html', comments=comments)
 
 
 def add_comment():
@@ -47,19 +46,11 @@ def add_comment():
     posted = datetime.datetime.utcnow()
     #we want to know the text
     text = request.form['comment']
-    reset = False
-    last = False
     if parent_id:
         mongo.db.comments.update(
             {'_id':parent_id},
             {'$set':{'last':False}})
         cursor = mongo.db.comments.find_one({'parent': parent_id, 'indentation': indent})
-        if cursor is not None:
-            reset = True
-        else:
-            last = True
-    else:
-        reset = True
     #        mongo.db.comments.update({'indentation':indent},
     #        {'$set':{'last': False}})
     new_id = mongo.db.comments.insert({
@@ -67,8 +58,6 @@ def add_comment():
         'text': text,
         'parent': parent_id,
         'indentation': indent,
-        'reset': reset,
-        'last': last,
         'children': [],
     })
     #if this is a reply, we update that 'document'
@@ -99,17 +88,14 @@ def get_all_comments(cursor=None):
         comments.append(cursor[i])
         children = []
         for child in cursor[i]['children']:
-            children += get_all_comments(
+            children.extend(get_all_comments(
                 mongo.db.comments.find({
                     '_id' : ObjectId(child['ref_id'])
                 })
-            )
-        children[0]['open'] = True
-        children[-1]['close'] = True
-        #for child in cursor[i]['children']:
-        #    comments += get_all_comments(
-        #        mongo.db.comments.find({'_id': ObjectId(child['ref_id'])})
-        #    )
+            ))
+        if children:
+            children[0]['open'] = True
+            children[-1]['close'] = True
         comments.extend(children)
     return comments
 
