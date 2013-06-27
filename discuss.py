@@ -88,17 +88,17 @@ def get_all_comments(cursor=None):
     comments = []
     for i in range(0, cursor.count()):
         comments.append(cursor[i])
-        children = []
         for child in cursor[i]['children']:
-            children.extend(get_all_comments(
+            comments.extend(get_all_comments(
                 mongo.db.comments.find({
                     '_id' : ObjectId(child['ref_id'])
                 })
             ))
-        if children:
-            children[0]['open'] = True
-            children[-1]['close'] = True
-        comments.extend(children)
+    if comments:
+        comments[0]['open'] = 1
+        comments[-1]['close'] = comments[-1]['close'] + 1 \
+            if 'close' in comments[-1] \
+            else 1
     return comments
 
 

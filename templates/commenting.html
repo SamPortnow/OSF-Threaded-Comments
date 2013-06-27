@@ -47,7 +47,11 @@
                     </div>
                 </div>
 
-            {% if comment.close %} </div> {% endif %}
+            {% if comment.close %} 
+                {% for _ in range(comment.close) %}
+                    </div> 
+                {% endfor %}
+            {% endif %}
 
             {% set count = count + 1 %}
 
