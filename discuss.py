@@ -4,10 +4,11 @@ from flask import Flask, request, url_for, render_template, redirect
 from flask.ext.pymongo import PyMongo
 import datetime
 from bson.objectid import ObjectId
+import itertools
+import operator
 
 app = Flask(__name__)
 mongo = PyMongo(app)
-
 
 @app.route('/', methods=['GET', 'POST'])
 def home():
@@ -20,7 +21,8 @@ def home():
     cursor = mongo.db.comments.find({'parent': None})
     #once we have this cursor, we look up all the comments
     comments = get_all_comments(cursor=cursor)
-    return render_template('commenting.html', comments=comments)
+    print comments
+    return render_template('commenting.html', comment_groups=comments)
 
 
 def add_comment():
@@ -32,7 +34,6 @@ def add_comment():
         parent_id = ObjectId(parent_id)
         if not mongo.db.comments.find({'_id': parent_id}).count():
             raise Exception('Parent ID doesn\'t exist.')
-
     # Validate indent, the indent is where you get the
     # 'threading'. if there's no indent val, this
     # defaults to 0
@@ -42,18 +43,32 @@ def add_comment():
             indent = int(indent)
         except ValueError:
             raise Exception('Indent must be int-convertible.')
-
     #we want to know when the comments were posted
     posted = datetime.datetime.utcnow()
     #we want to know the text
     text = request.form['comment']
-    #we insert the new id into the database, by default is has
-    #no children (it was just added!)
+    reset = False
+    last = False
+    if parent_id:
+        mongo.db.comments.update(
+            {'_id':parent_id},
+            {'$set':{'last':False}})
+        cursor = mongo.db.comments.find_one({'parent': parent_id, 'indentation': indent})
+        if cursor is not None:
+            reset = True
+        else:
+            last = True
+    else:
+        reset = True
+    #        mongo.db.comments.update({'indentation':indent},
+    #        {'$set':{'last': False}})
     new_id = mongo.db.comments.insert({
         'posted': posted,
         'text': text,
         'parent': parent_id,
         'indentation': indent,
+        'reset': reset,
+        'last': last,
         'children': [],
     })
     #if this is a reply, we update that 'document'
@@ -80,13 +95,30 @@ def get_all_comments(cursor=None):
 
     """
     comments = []
-    for comment in cursor:
-        comments.append(comment)
-        for child in comment['children']:
-            comments += get_all_comments(
-                mongo.db.comments.find({'_id': ObjectId(child['ref_id'])})
+    for i in range(0, cursor.count()):
+        comments.append(cursor[i])
+        children = []
+        for child in cursor[i]['children']:
+            children += get_all_comments(
+                mongo.db.comments.find({
+                    '_id' : ObjectId(child['ref_id'])
+                })
             )
+        children[0]['open'] = True
+        children[-1]['close'] = True
+        #for child in cursor[i]['children']:
+        #    comments += get_all_comments(
+        #        mongo.db.comments.find({'_id': ObjectId(child['ref_id'])})
+        #    )
+        comments.extend(children)
     return comments
+
+
+### if that indent level does not exist yet, then that one is the first
+### also make that one the last by default, and as you add to that indent,
+### update that id so its no longer the last, and make the current one the
+### last
+
 
 if __name__ == '__main__':
     app.run(debug=True)
