@@ -4,11 +4,15 @@ from flask import Flask, request, url_for, render_template, redirect
 from flask.ext.pymongo import PyMongo
 import datetime
 from bson.objectid import ObjectId
-import itertools
-import operator
 
 app = Flask(__name__)
 mongo = PyMongo(app)
+
+@app.route('/clear/')
+def clear():
+    
+    mongo.db.comments.remove()
+    return redirect(url_for('home'))
 
 @app.route('/', methods=['GET', 'POST'])
 def home():
@@ -51,8 +55,6 @@ def add_comment():
             {'_id':parent_id},
             {'$set':{'last':False}})
         cursor = mongo.db.comments.find_one({'parent': parent_id, 'indentation': indent})
-    #        mongo.db.comments.update({'indentation':indent},
-    #        {'$set':{'last': False}})
     new_id = mongo.db.comments.insert({
         'posted': posted,
         'text': text,
