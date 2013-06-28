@@ -25,6 +25,7 @@ def home():
     cursor = mongo.db.comments.find({'parent': None})
     #once we have this cursor, we look up all the comments
     comments = get_all_comments(cursor=cursor)
+    print comments
     return render_template('commenting.html', comments=comments)
 
 
@@ -40,26 +41,23 @@ def add_comment():
     # Validate indent, the indent is where you get the
     # 'threading'. if there's no indent val, this
     # defaults to 0
-    indent = request.form.get('indent', 0)
-    if indent:
-        try:
-            indent = int(indent)
-        except ValueError:
-            raise Exception('Indent must be int-convertible.')
     #we want to know when the comments were posted
     posted = datetime.datetime.utcnow()
     #we want to know the text
     text = request.form['comment']
+    if not text.strip():
+        return
     if parent_id:
         mongo.db.comments.update(
             {'_id':parent_id},
             {'$set':{'last':False}})
-        cursor = mongo.db.comments.find_one({'parent': parent_id, 'indentation': indent})
+        cursor = mongo.db.comments.find_one({
+            'parent': parent_id,
+        })
     new_id = mongo.db.comments.insert({
         'posted': posted,
         'text': text,
         'parent': parent_id,
-        'indentation': indent,
         'children': [],
     })
     #if this is a reply, we update that 'document'
@@ -75,7 +73,7 @@ def add_comment():
     return redirect(url_for('home'))
 
 
-def get_all_comments(cursor=None):
+def get_all_comments(cursor):
     """
      we recursively go through the db. we go
      through all of the first level comments,
@@ -85,22 +83,20 @@ def get_all_comments(cursor=None):
      each time we add to our list of comments
 
     """
-    comments = []
-    for i in range(0, cursor.count()):
-        comments.append(cursor[i])
-        for child in cursor[i]['children']:
-            comments.extend(get_all_comments(
-                mongo.db.comments.find({
-                    '_id' : ObjectId(child['ref_id'])
-                })
-            ))
-    if comments:
-        comments[0]['open'] = 1
-        comments[-1]['close'] = comments[-1]['close'] + 1 \
-            if 'close' in comments[-1] \
-            else 1
-    return comments
 
+    comments = list(cursor)
+    for comment_idx in range(len(comments)):
+        comment = comments[comment_idx]
+        child_refs = comment['children']
+        children = []
+        for child_idx in range(len(child_refs)):
+            children += get_all_comments(
+                mongo.db.comments.find({
+                    '_id' : ObjectId(child_refs[child_idx]['ref_id']),
+                })
+            )
+        comment['children'] = children
+    return comments
 
 ### if that indent level does not exist yet, then that one is the first
 ### also make that one the last by default, and as you add to that indent,
