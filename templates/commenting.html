@@ -29,6 +29,10 @@
         {
             display: none;
         }
+        .comment-form
+        {
+            display:inline;
+        }
     </style>
 </head>
 <body>
@@ -69,11 +73,7 @@
                 <!-- Body -->
                 <div class="table-bordered comment-text">
                     {{ comment.text|markdownify|safe }}
-                    <button class="formatting">
-                        formatting help
-                    </button>
                 </div>
-
                 <!-- Reply -->
                 <div class="comment-reply">
                     <button class="btn-primary comment-reply">Reply</button>
@@ -84,11 +84,13 @@
                     <form action="/" method="post" class="comment-form">
                         <textarea rows='3' name=comment></textarea>
                         <input type="hidden" name="parent" value="{{ comment._id }}" />
-                        <div>
+                        <br>
                             <button class="btn-primary">Submit</button>
                             <button class="btn-primary">Cancel</button>
-                        </div>
                     </form>
+                    <button class="formatting">
+                        formatting help
+                    </button>
                 </div>
 
                 <div class="format-help">
@@ -117,6 +119,7 @@
                             &nbsp;&nbsp;&nbsp;&nbsp;if 1 == 1:<br>
                             &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;print "thats true!"</td>
                             <td>
+                            Lines started with four spaces are treated like code:<br>
                             &nbsp;&nbsp;&nbsp;&nbsp;if 1 == 1:<br>
                             &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;print "thats true!"
                             </td>
