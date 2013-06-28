@@ -4,9 +4,14 @@ from flask import Flask, request, url_for, render_template, redirect
 from flask.ext.pymongo import PyMongo
 import datetime
 from bson.objectid import ObjectId
+import markdown2
+
 
 app = Flask(__name__)
 mongo = PyMongo(app)
+
+# 
+app.jinja_env.filters['markdownify'] = markdown2.markdown
 
 @app.route('/clear/')
 def clear():

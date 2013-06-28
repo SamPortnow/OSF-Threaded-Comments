@@ -34,8 +34,7 @@
 
     <p>
     <form action="/" method="post" class="add-entry">
-        <textarea rows="3" name=comment>
-        </textarea>
+        <textarea rows="3" name=comment></textarea>
     </p>
     <p><button class="btn-primary" type="submit">Comment</button>
     </p>
@@ -47,12 +46,18 @@
 
             <div class="comment-container" id="{{comment._id}}">
                 
+                <!-- Comment date -->
+                <div class="comment-date">
+                    {{ comment.posted.strftime('%A, %d. %B %Y %I:%M %p') }}
+                </div>
+                pass
+
                 <!-- Comment text -->
                 <div class="table-bordered comment-text">
-                    {{ comment.text }}
+                    {{ comment.text|markdownify|safe }}
                 </div>
 
-                <!--  -->
+                <!-- Comment reply -->
                 <div class="comment-reply">
                     <button class="btn-primary comment-reply">Reply</button>
                 </div>
