@@ -6,19 +6,32 @@
     <!-- Bootstrap -->
     <link href="../static/bootstrap/css/bootstrap.min.css" rel="stylesheet" media="screen">
     <style>
-        body
-        {
+        body {
             padding:10px;
         }
-        div.container-fluid
-        {
+        div.comment-section {
+            margin-left: -50px;
+        }
+        div.comment-group {
+            margin-left: 50px;
+            padding-left: 10px;
             border-left-style: dashed;
-            border-left-color: #81847d;
+            border-left-color: pink;
+        }
+        div.comment-submit {
+            display: none;
         }
     </style>
 </head>
 <body>
-    <p><button class="btn-primary" onclick="location.href = '/clear/';">Clear</button></p>
+    
+    <!-- Clear comments; remove in production -->
+    <p>
+        <button class="btn-primary" onclick="location.href = '/clear/';">
+            Clear
+        </button>
+    </p>
+
     <p>
     <form action="/" method="post" class="add-entry">
         <textarea rows="3" name=comment>
@@ -27,50 +40,72 @@
     <p><button class="btn-primary" type="submit">Comment</button>
     </p>
     </form>
-    {% set count = 0 %}
+    
+    {% macro render_comment(comment) -%}
+        
+        <div class="comment-group">
 
-    <div class="comment-group row-fluid">
-    {% for comment in comments %}
+            <div class="comment-container" id="{{comment._id}}">
+                
+                <!-- Comment text -->
+                <div class="table-bordered comment-text">
+                    {{ comment.text }}
+                </div>
 
-        {% if comment.open %} <div class="container-fluid offset{{comment.indentation}}">{% endif %}
-        <!--<div class="container-fluid offset{{comment.indentation}}">-->
+                <!--  -->
+                <div class="comment-reply">
+                    <button class="btn-primary comment-reply">Reply</button>
+                </div>
 
-                    <div class="table-bordered" id="text-{{count}}" data-id="{{comment._id}}">
-                        {{comment.text}}
-                    </div>
-                    <div class="row"
-                         id="comment-{{count}}">
-                        <button class="btn-primary" id="btn-{{count}}"
-                                onclick="AddReplyBox('{{count}}', '{{comment.indentation+1}}')">Reply</button>
-                    </div>
+                <!--  -->
+                <div class="comment-submit">
+                    <form action='/' method='post' class='comment-form'>
+                        <textarea rows='3' name=comment></textarea>
+                        <input type='hidden' name='parent' value="{{ comment._id }}" />
+                        <div>
+                            <button class="btn-primary">Submit</button>
+                            <button class="btn-primary">Cancel</button>
+                        </div>
+                    </form>
+                </div>
 
-            {% if comment.close %} 
-                {% for _ in range(comment.close) %}
-                    </div>
-                {% endfor %}
-            {% endif %}
+            </div>
+            
+            <!-- Render children -->
+            {% for child in comment.children %}
+                {{ render_comment(child) }}
+            {% endfor %}
 
-            {% set count = count + 1 %}
+        </div>
 
-    {% endfor %}
+    {%- endmacro %}
+    
+    <div class="comment-section">
+        {% for comment in comments %}
+            
+            {{ render_comment(comment) }}
+
+        {% endfor %}
     </div>
 
 <script src="../static/bootstrap/js/bootstrap.min.js"></script>
 <script src="//ajax.googleapis.com/ajax/libs/jquery/1.10.1/jquery.min.js"></script>
 <script>
-    function AddReplyBox(count, indentation)
-    {
-        var parent_id = document.getElementById('text-'+count)
-            .getAttribute('data-id');
 
-        $('#btn-'+count).remove();
-        $('#comment-'+count).append(
-                "<form action='/' method='post' class='add-entry'>" +
-                "<textarea rows='3' name=comment></textarea>" +
-                "<input type='hidden' name='parent' value='" + parent_id +"'>"+
-                "<input type='hidden' name='indent' value='" + indentation + "'>"+
-                "<p><button class='btn-primary' type='submit'> Reply</button></p></form>");
-    };
+    $(document).ready(function() {
+        $('div.comment-reply button').click(function() {
+            add_submit_btn(this);
+        });
+    });
+
+    function add_submit_btn(elm) {
+        
+        $(elm)
+            .closest('.comment-container')
+            .find('.comment-reply, .comment-submit')
+            .toggle();
+
+    }
 </script>
 </body>
 </html>
