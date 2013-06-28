@@ -48,7 +48,7 @@
     </p>
     </form>
     
-    {% macro render_comment(comment) -%}
+    {% macro render_comment(comment, level=0) -%}
         
         <div class="comment-group">
 
@@ -59,7 +59,14 @@
                     {{ comment.posted.strftime('%A, %d. %B %Y %I:%M %p') }}
                 </div>
 
-                <!-- Comment text -->
+                <!-- Comment scroll -->
+                {% if level %}
+                    <div class="comment-scroll">
+                        <button class="button-primary">Scroll to parent</button>
+                    </div>
+                {% endif %}
+
+                <!-- Body -->
                 <div class="table-bordered comment-text">
                     {{ comment.text|markdownify|safe }}
                     <button class="formatting">
@@ -67,16 +74,16 @@
                     </button>
                 </div>
 
-                <!-- Comment reply -->
+                <!-- Reply -->
                 <div class="comment-reply">
                     <button class="btn-primary comment-reply">Reply</button>
                 </div>
 
-                <!--  -->
+                <!-- Textarea and submit -->
                 <div class="comment-submit">
-                    <form action='/' method='post' class='comment-form'>
+                    <form action="/" method="post" class="comment-form">
                         <textarea rows='3' name=comment></textarea>
-                        <input type='hidden' name='parent' value="{{ comment._id }}" />
+                        <input type="hidden" name="parent" value="{{ comment._id }}" />
                         <div>
                             <button class="btn-primary">Submit</button>
                             <button class="btn-primary">Cancel</button>
@@ -127,7 +134,7 @@
             
             <!-- Render children -->
             {% for child in comment.children %}
-                {{ render_comment(child) }}
+                {{ render_comment(child, level + 1) }}
             {% endfor %}
 
         </div>
@@ -149,6 +156,16 @@
     $(document).ready(function() {
         $('div.comment-reply button').click(function() {
             add_submit_btn(this);
+        });
+        $('div.comment-scroll').click(function() {
+            var group = $(this).closest('.comment-group'),
+                nextgroup = group.parent().closest('.comment-group');
+            if (nextgroup.length) {
+                group = nextgroup;
+            }
+            $('html, body').animate({
+                scrollTop: group.offset().top + 'px',
+            });
         });
     });
 
