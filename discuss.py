@@ -6,7 +6,6 @@ import datetime
 from bson.objectid import ObjectId
 import markdown2
 
-
 app = Flask(__name__)
 mongo = PyMongo(app)
 
@@ -102,12 +101,6 @@ def get_all_comments(cursor):
             )
         comment['children'] = children
     return comments
-
-### if that indent level does not exist yet, then that one is the first
-### also make that one the last by default, and as you add to that indent,
-### update that id so its no longer the last, and make the current one the
-### last
-
 
 if __name__ == '__main__':
     app.run(debug=True)
