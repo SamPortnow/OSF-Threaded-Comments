@@ -1,6 +1,6 @@
 __author__ = 'samportnow'
 
-from flask import Flask, request, url_for, render_template, redirect
+from flask import Flask, request, url_for, render_template, redirect, session
 from flask.ext.pymongo import PyMongo
 import datetime
 from bson.objectid import ObjectId
@@ -14,7 +14,6 @@ app.jinja_env.filters['markdownify'] = markdown2.markdown
 
 @app.route('/clear/')
 def clear():
-    
     mongo.db.comments.remove()
     return redirect(url_for('home'))
 
@@ -22,6 +21,8 @@ def clear():
 def home():
     #if there's a post, we add the comment
     if request.method == 'POST':
+        if request.form.get('id', None) is not None:
+            vote()
         add_comment()
     #in order to render the comments, we first get a cursor that
     #is the all of the comments without parent. these are
@@ -63,6 +64,7 @@ def add_comment():
         'text': text,
         'parent': parent_id,
         'children': [],
+        'votes': 1
     })
     #if this is a reply, we update that 'document'
     #to include a ref to its a child (the reply)
@@ -101,6 +103,16 @@ def get_all_comments(cursor):
             )
         comment['children'] = children
     return comments
+
+def vote():
+    val = request.form.get("val", None)
+    id = request.form.get("id", None)
+    votes = mongo.db.comments.find_one({'_id':ObjectId(id)})['votes']
+    if val and id:
+        votes += int(val)
+        mongo.db.comments.update(
+            {'_id':ObjectId(id)},
+            {'$set':{'votes':votes}})
 
 if __name__ == '__main__':
     app.run(debug=True)

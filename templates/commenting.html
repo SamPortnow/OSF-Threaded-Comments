@@ -33,6 +33,27 @@
         {
             display:inline;
         }
+        tr.title
+        {
+            background-color:pink;
+        }
+        #thumbs_blue
+        {
+            width:25px;
+            height:25px;
+            display:block;
+            position:relative;
+            z-index: 2;
+        }
+        #thumbs_gold
+        {
+            width:25px;
+            height:25px;
+            display:block;
+            position:relative;
+            z-index: 1;
+            display:none;
+        }
     </style>
 </head>
 <body>
@@ -71,6 +92,12 @@
                 {% endif %}
 
                 <!-- Body -->
+                <div class="images">
+                    <img id="thumbs_blue" src="../static/images/thumb_up_blue.jpg"><img>
+                    <img id="thumbs_gold" src="../static/images/thumb_up_gold.jpg"><img>
+                    <form id="vote">
+                    </form>
+                </div>
                 <div class="table-bordered comment-text">
                     {{ comment.text|markdownify|safe }}
                 </div>
@@ -95,7 +122,7 @@
 
                 <div class="format-help">
                     <table class = "table table-striped">
-                        <tr>
+                        <tr class="title">
                             <td> What you type </td>
                             <td> What you get </td>
                         </tr>
@@ -170,6 +197,18 @@
                 scrollTop: group.offset().top + 'px',
             });
         });
+        $('button.formatting').click(function()
+        {
+            show_help(this);
+        });
+        $('img#thumbs_blue').click(function()
+        {
+            upvote(this);
+        })
+        $('img#thumbs_gold').click(function()
+        {
+            neutral(this);
+        })
     });
 
     function add_submit_btn(elm) {
@@ -181,23 +220,57 @@
 
     }
 
-    $(document).ready(function()
-    {
-        $('button.formatting').click(function()
-        {
-            show_help(this);
-        });
-    });
-
     function show_help(elm)
     {
         $(elm)
                 .closest('.comment-container')
                 .find('.format-help')
                 .toggle();
-        console.log(elm);
 
     }
+
+    function upvote(elm)
+    {
+        $(elm)
+                .closest('.images')
+                .find('#thumbs_blue')
+                .toggle();
+
+        $(elm)
+                .closest('.images')
+                .find('#thumbs_gold')
+                .toggle();
+
+
+        send_vote(1, elm);
+
+    }
+
+    function neutral(elm)
+    {
+        $(elm)
+                .closest('.images')
+                .find('#thumbs_gold')
+                .toggle();
+
+        $(elm)
+                .closest('.images')
+                .find('#thumbs_blue')
+                .toggle();
+        send_vote(-1, elm);
+    }
+
+    function send_vote(val, elm)
+    {
+        var id = $(elm).closest('.comment-container').attr('id');
+        $.post("/",
+                {
+                    id:id,
+                    val:val
+                }
+        );
+    }
+
     </script>
 
 </body>
