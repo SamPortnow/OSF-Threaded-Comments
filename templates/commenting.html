@@ -54,6 +54,15 @@
             z-index: 1;
             display:none;
         }
+         .images
+         {
+             float:left;
+         }
+
+        .comment-scroll
+        {
+            float:left;
+        }
     </style>
 </head>
 <body>
@@ -85,11 +94,6 @@
                 </div>
 
                 <!-- Comment scroll -->
-                {% if level %}
-                    <div class="comment-scroll">
-                        <button class="button-primary">Scroll to parent</button>
-                    </div>
-                {% endif %}
 
                 <!-- Body -->
                 <div class="images">
@@ -102,6 +106,11 @@
                     {{ comment.text|markdownify|safe }}
                 </div>
                 <!-- Reply -->
+                {% if level %}
+                <div class="comment-scroll">
+                    <button class="button-primary">Scroll to parent</button>
+                </div>
+                {% endif %}
                 <div class="comment-reply">
                     <button class="btn-primary comment-reply">Reply</button>
                 </div>
