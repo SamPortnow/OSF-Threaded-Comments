@@ -63,6 +63,10 @@
         {
             float:left;
         }
+        #comments
+        {
+          display:none;
+        }
     </style>
 </head>
 <body>
@@ -80,13 +84,12 @@
     <p><button class="btn-primary" type="submit">Comment</button>
     </p>
     </form>
-    
+
     {% macro render_comment(comment, level=0) -%}
-        
         <div class="comment-group">
 
             <div class="comment-container" id="{{comment._id}}">
-                
+
                 <!-- Comment date -->
                 <div class="comment-date">
                     {{ comment.posted.strftime('%A, %d. %B %Y %I:%M %p') }}
@@ -167,12 +170,19 @@
                         </tr>
                     </table>
                 </div>
-
-            </div>
-            
+        </div>
             <!-- Render children -->
+
             {% for child in comment.children %}
+                {% if loop.first and comment.children|length > 2 %}
+                <div id="comments">
+                {% endif %}
                 {{ render_comment(child, level + 1) }}
+                {% if loop.last and comment.children|length > 2 %}
+                </div>
+                <button type="button" class="toggling"> show/hide replies </button>
+            {% endif %}
+
             {% endfor %}
 
         </div>
@@ -181,13 +191,14 @@
     
     <div class="comment-section">
         {% for comment in comments %}
-            
             {{ render_comment(comment) }}
-
         {% endfor %}
     </div>
 
 <script src="../static/bootstrap/js/bootstrap.min.js"></script>
+<script src="http://code.jquery.com/ui/1.10.3/themes/smoothness/jquery-ui.css"></script>
+<script src="http://code.jquery.com/jquery-1.9.1.js"></script>
+<script src="http://code.jquery.com/ui/1.10.3/jquery-ui.js"></script>
 <script src="//ajax.googleapis.com/ajax/libs/jquery/1.10.1/jquery.min.js"></script>
 <script>
 
@@ -217,6 +228,9 @@
         {
             neutral(this);
         })
+        $('.toggling').click(function() {
+            toggle_it(this);
+        })
     });
 
     function add_submit_btn(elm) {
@@ -235,6 +249,12 @@
                 .find('.format-help')
                 .toggle();
 
+    }
+
+    function collapse_it(elm)
+    {
+        $(elm)
+                .closest('.comment-container').find('.comment-container').collapse();
     }
 
     function upvote(elm)
@@ -277,6 +297,15 @@
                     val:val
                 }
         );
+    }
+
+    function toggle_it(elm)
+    {
+        console.log(elm);
+        console.log($(elm).closest('.comment-group').find('#comments'));
+        $(elm).closest('.comment-group')
+                .find('#comments')
+                .toggle('fast')
     }
 
     </script>
