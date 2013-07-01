@@ -73,7 +73,6 @@
             Clear
         </button>
     </p>
-
     <p>
     <form action="/" method="post" class="add-entry">
         <textarea rows="3" name=comment></textarea>
@@ -272,7 +271,7 @@
     function send_vote(val, elm)
     {
         var id = $(elm).closest('.comment-container').attr('id');
-        $.post("/",
+        $.post("/vote/",
                 {
                     id:id,
                     val:val
