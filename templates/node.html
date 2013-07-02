@@ -1,0 +1,84 @@
+{% extends "commenting.html" %}
+
+<!--<!DOCTYPE html>-->
+
+{% block head %}
+
+    <title>Bootstrap 101 Template</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Bootstrap -->
+    <link href="../static/bootstrap/css/bootstrap.min.css" rel="stylesheet" media="screen">
+    <style>
+        body {
+            padding:10px;
+        }
+        div.comment-section {
+            margin-left: -50px;
+        }
+        div.comment-group {
+            margin-left: 50px;
+            padding-left: 10px;
+            border-left-style: dashed;
+            border-left-color: pink;
+        }
+        div.comment-submit {
+            display: none;
+        }
+        .table
+        {
+            width:50px;
+        }
+        .format-help
+        {
+            display: none;
+        }
+        .comment-form
+        {
+            display:inline;
+        }
+        tr.title
+        {
+            background-color:pink;
+        }
+        #thumbs_blue
+        {
+            width:25px;
+            height:25px;
+            display:block;
+            position:relative;
+            z-index: 2;
+        }
+        #thumbs_gold
+        {
+            width:25px;
+            height:25px;
+            display:block;
+            position:relative;
+            z-index: 1;
+            display:none;
+        }
+        .images
+        {
+            float:left;
+        }
+
+        .comment-scroll
+        {
+            float:left;
+        }
+        #comments
+        {
+            display:none;
+        }
+    </style>
+{% endblock %}
+
+{% block body %}
+<html>
+
+<div>
+    This is the node to end all nodes
+
+</div>
+
+{% endblock %}
