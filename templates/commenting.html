@@ -70,14 +70,13 @@
             function upvote(elm)
             {
                 $(elm)
-                        .closest('.images')
-                        .find('#thumbs_blue')
-                        .toggle();
+                    .closest('.images')
+                    .find('img')
+                    .toggle();
 
                 $(elm)
-                        .closest('.images')
-                        .find('#thumbs_gold')
-                        .toggle();
+                    .closest('.images')
+                    .find('.vote-count')
 
 
                 send_vote(1, elm);
@@ -101,12 +100,22 @@
             function send_vote(val, elm)
             {
                 var id = $(elm).closest('.comment-container').attr('id');
-                $.post("/vote/",
-                        {
-                            id:id,
-                            val:val
-                        }
-                );
+                console.log(id);
+                $.ajax({
+                    url : '/vote/',
+                    method : 'POST',
+                    data : {
+                        id : id,
+                        val : val,
+                    },
+                    dataType : 'json',
+                    success : function(data) {
+                        $(elm)
+                                .closest('.images')
+                                .find('.vote-count')
+                                .text(data.votes)
+                    },
+                });
             }
 
             function toggle_it(elm)
@@ -158,6 +167,7 @@
                     <img id="thumbs_gold" src="../static/images/thumb_up_gold.jpg" />
                     <form id="vote">
                     </form>
+                    <span class="vote-count"> {{comment.votes}} </span>
                 </div>
                 <div class="table-bordered comment-text">
                     {{ comment.text|markdownify|safe }}

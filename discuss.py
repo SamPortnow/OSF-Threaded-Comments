@@ -6,6 +6,7 @@ import datetime
 from bson.objectid import ObjectId
 import markdown2
 from werkzeug.contrib.cache import SimpleCache
+from flask import jsonify
 
 app = Flask(__name__)
 mongo = PyMongo(app)
@@ -129,14 +130,21 @@ def get_all_comments(cursor):
 def vote():
     val = request.form.get("val", None)
     id = request.form.get("id", None)
-    votes = mongo.db.comments.find_one({'_id':ObjectId(id)})['votes']
+    comment = mongo.db.comments.find_one({
+        '_id' : ObjectId(id),
+    })
+    votes = comment['votes']
+    content_id = comment['content_id']
+    #votes = mongo.db.comments.find_one({'_id':ObjectId(id)})['votes']
     votes += int(val)
     mongo.db.comments.update(
         {'_id':ObjectId(id)},
         {'$set':{'votes':votes}})
     #update the comment to store the vote
     update_comment(cached_comments, ObjectId(id), 'votes', int(val))
-    return ''
+    #reset the cache
+    cache.set(content_id, cached_comments)
+    return jsonify(votes=votes)
 
 def update_comment(comment_cache, _id, key, value):
     #queue is a copy of our comment cache
@@ -148,6 +156,7 @@ def update_comment(comment_cache, _id, key, value):
         comments = queue.pop(0)
         #if we get the correct id, we ad the value to it
         if comments['_id'] == _id:
+            print 'WHAT UP I FOUND THE COMMENT'
             comments[key] += value
             return
         #if we have children we add it to the end of the queue
