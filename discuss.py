@@ -21,8 +21,8 @@ def clear():
     cache.clear()
     return redirect(url_for('home'))
 
-@app.route('/', methods=['GET', 'POST'])
-def home():
+@app.route('/<content_id>/', methods=['GET', 'POST'])
+def home(content_id):
     #cached_comments is going to be global, so we can update it
     #as needed when users vote, without querying the database
     global cached_comments
@@ -32,13 +32,21 @@ def home():
     #in order to render the comments, we first get a cursor that
     #is the all of the comments without parent. these are
     #our first level comments
-    cursor = mongo.db.comments.find({'parent': None})
+    cursor = mongo.db.comments.find({
+        'parent' : None,
+        'content_id' : content_id,
+    })
     #once we have this cursor, we look up all the comments
-    if cache.get('comments') is None:
+    if cache.get(content_id) is None:
         comments = get_all_comments(cursor=cursor)
-        cache.set('comments', comments, timeout=500000)
-        cached_comments = cache.get('comments')
-    return render_template('commenting.html', comments=cached_comments)
+        cache.set(content_id, comments, timeout=500000)
+        cached_comments = cache.get(content_id)
+    else:
+        cached_comments = cache.get(content_id)
+    return render_template('node.html', **{
+        'comments' : cached_comments,
+        'content_id' : content_id,
+    })
 
 
 def add_comment():
@@ -50,6 +58,9 @@ def add_comment():
         parent_id = ObjectId(parent_id)
         if not mongo.db.comments.find({'_id': parent_id}).count():
             raise Exception('Parent ID doesn\'t exist.')
+    content_id = request.form.get('content_id', None)
+    if content_id is None:
+        raise Exception('Must provide content ID.')
     # Validate indent, the indent is where you get the
     # 'threading'. if there's no indent val, this
     # defaults to 0
@@ -64,14 +75,16 @@ def add_comment():
             {'_id':parent_id},
             {'$set':{'last':False}})
         cursor = mongo.db.comments.find_one({
-            'parent': parent_id,
+            'parent' : parent_id,
+            'content_id' : content_id,
         })
     new_id = mongo.db.comments.insert({
         'posted': posted,
         'text': text,
         'parent': parent_id,
         'children': [],
-        'votes': 1
+        'votes': 1,
+        'content_id': content_id,
     })
     #if this is a reply, we update that 'document'
     #to include a ref to its a child (the reply)
@@ -84,7 +97,7 @@ def add_comment():
 
     # Refresh home page
     cache.clear()
-    return redirect(url_for('home'))
+    return redirect(url_for('home', content_id=content_id))
 
 
 def get_all_comments(cursor):

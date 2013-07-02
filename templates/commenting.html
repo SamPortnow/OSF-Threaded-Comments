@@ -1,76 +1,130 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Bootstrap 101 Template</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- Bootstrap -->
-    <link href="../static/bootstrap/css/bootstrap.min.css" rel="stylesheet" media="screen">
-    <style>
-        body {
-            padding:10px;
-        }
-        div.comment-section {
-            margin-left: -50px;
-        }
-        div.comment-group {
-            margin-left: 50px;
-            padding-left: 10px;
-            border-left-style: dashed;
-            border-left-color: pink;
-        }
-        div.comment-submit {
-            display: none;
-        }
-        .table
-        {
-            width:50px;
-        }
-        .format-help
-        {
-            display: none;
-        }
-        .comment-form
-        {
-            display:inline;
-        }
-        tr.title
-        {
-            background-color:pink;
-        }
-        #thumbs_blue
-        {
-            width:25px;
-            height:25px;
-            display:block;
-            position:relative;
-            z-index: 2;
-        }
-        #thumbs_gold
-        {
-            width:25px;
-            height:25px;
-            display:block;
-            position:relative;
-            z-index: 1;
-            display:none;
-        }
-         .images
-         {
-             float:left;
-         }
 
-        .comment-scroll
-        {
-            float:left;
-        }
-        #comments
-        {
-          display:none;
-        }
-    </style>
-</head>
-<body>
-    
+<html>
+
+    <head>
+
+        {% block head %}{% endblock %}
+
+        <script src="../static/bootstrap/js/bootstrap.min.js"></script>
+        <script src="http://code.jquery.com/ui/1.10.3/themes/smoothness/jquery-ui.css"></script>
+        <script src="http://code.jquery.com/jquery-1.9.1.js"></script>
+        <script src="http://code.jquery.com/ui/1.10.3/jquery-ui.js"></script>
+        <script src="//ajax.googleapis.com/ajax/libs/jquery/1.10.1/jquery.min.js"></script>
+        <script>
+
+            $(document).ready(function() {
+                $('div.comment-reply button').click(function() {
+                    add_submit_btn(this);
+                });
+                $('div.comment-scroll').click(function() {
+                    var group = $(this).closest('.comment-group'),
+                            nextgroup = group.parent().closest('.comment-group');
+                    if (nextgroup.length) {
+                        group = nextgroup;
+                    }
+                    $('html, body').animate({
+                        scrollTop: group.offset().top + 'px',
+                    });
+                });
+                $('button.formatting').click(function()
+                {
+                    show_help(this);
+                });
+                $('img#thumbs_blue').click(function()
+                {
+                    upvote(this);
+                })
+                $('img#thumbs_gold').click(function()
+                {
+                    neutral(this);
+                })
+                $('.toggling').click(function() {
+                    toggle_it(this);
+                })
+            });
+
+            function add_submit_btn(elm) {
+
+                $(elm)
+                        .closest('.comment-container')
+                        .find('.comment-reply, .comment-submit')
+                        .toggle();
+
+            }
+
+            function show_help(elm)
+            {
+                $(elm)
+                        .closest('.comment-container')
+                        .find('.format-help')
+                        .toggle();
+
+            }
+
+            function collapse_it(elm)
+            {
+                $(elm)
+                        .closest('.comment-container').find('.comment-container').collapse();
+            }
+
+            function upvote(elm)
+            {
+                $(elm)
+                        .closest('.images')
+                        .find('#thumbs_blue')
+                        .toggle();
+
+                $(elm)
+                        .closest('.images')
+                        .find('#thumbs_gold')
+                        .toggle();
+
+
+                send_vote(1, elm);
+
+            }
+
+            function neutral(elm)
+            {
+                $(elm)
+                        .closest('.images')
+                        .find('#thumbs_gold')
+                        .toggle();
+
+                $(elm)
+                        .closest('.images')
+                        .find('#thumbs_blue')
+                        .toggle();
+                send_vote(-1, elm);
+            }
+
+            function send_vote(val, elm)
+            {
+                var id = $(elm).closest('.comment-container').attr('id');
+                $.post("/vote/",
+                        {
+                            id:id,
+                            val:val
+                        }
+                );
+            }
+
+            function toggle_it(elm)
+            {
+                var element =  $(elm).closest('.comment-group')
+                        .find('#comments')
+                element.toggle('fast');
+
+            }
+
+        </script>
+
+    </head>
+
+    <body>
+
+    {% block body %}{% endblock %}
+
     <!-- Clear comments; remove in production -->
     <p>
         <button class="btn-primary" onclick="location.href = '/clear/';">
@@ -78,8 +132,9 @@
         </button>
     </p>
     <p>
-    <form action="/" method="post" class="add-entry">
+    <form action="/{{ content_id }}/" method="post" class="add-entry">
         <textarea rows="3" name=comment></textarea>
+        <input type="hidden" name="content_id" value="{{ content_id }}" />
     </p>
     <p><button class="btn-primary" type="submit">Comment</button>
     </p>
@@ -99,8 +154,8 @@
 
                 <!-- Body -->
                 <div class="images">
-                    <img id="thumbs_blue" src="../static/images/thumb_up_blue.jpg"><img>
-                    <img id="thumbs_gold" src="../static/images/thumb_up_gold.jpg"><img>
+                    <img id="thumbs_blue" src="../static/images/thumb_up_blue.jpg" />
+                    <img id="thumbs_gold" src="../static/images/thumb_up_gold.jpg" />
                     <form id="vote">
                     </form>
                 </div>
@@ -119,9 +174,10 @@
 
                 <!-- Textarea and submit -->
                 <div class="comment-submit">
-                    <form action="/" method="post" class="comment-form">
+                    <form action="/{{ content_id }}/" method="post" class="comment-form">
                         <textarea rows='3' name=comment></textarea>
                         <input type="hidden" name="parent" value="{{ comment._id }}" />
+                        <input type="hidden" name="content_id" value=" {{ content_id }}" />
                         <br>
                             <button class="btn-primary">Submit</button>
                             <button class="btn-primary">Cancel</button>
@@ -188,127 +244,13 @@
         </div>
 
     {%- endmacro %}
-    
+
     <div class="comment-section">
         {% for comment in comments %}
             {{ render_comment(comment) }}
         {% endfor %}
     </div>
 
-<script src="../static/bootstrap/js/bootstrap.min.js"></script>
-<script src="http://code.jquery.com/ui/1.10.3/themes/smoothness/jquery-ui.css"></script>
-<script src="http://code.jquery.com/jquery-1.9.1.js"></script>
-<script src="http://code.jquery.com/ui/1.10.3/jquery-ui.js"></script>
-<script src="//ajax.googleapis.com/ajax/libs/jquery/1.10.1/jquery.min.js"></script>
-<script>
+    </body>
 
-    $(document).ready(function() {
-        $('div.comment-reply button').click(function() {
-            add_submit_btn(this);
-        });
-        $('div.comment-scroll').click(function() {
-            var group = $(this).closest('.comment-group'),
-                nextgroup = group.parent().closest('.comment-group');
-            if (nextgroup.length) {
-                group = nextgroup;
-            }
-            $('html, body').animate({
-                scrollTop: group.offset().top + 'px',
-            });
-        });
-        $('button.formatting').click(function()
-        {
-            show_help(this);
-        });
-        $('img#thumbs_blue').click(function()
-        {
-            upvote(this);
-        })
-        $('img#thumbs_gold').click(function()
-        {
-            neutral(this);
-        })
-        $('.toggling').click(function() {
-            toggle_it(this);
-        })
-    });
-
-    function add_submit_btn(elm) {
-        
-        $(elm)
-            .closest('.comment-container')
-            .find('.comment-reply, .comment-submit')
-            .toggle();
-
-    }
-
-    function show_help(elm)
-    {
-        $(elm)
-                .closest('.comment-container')
-                .find('.format-help')
-                .toggle();
-
-    }
-
-    function collapse_it(elm)
-    {
-        $(elm)
-                .closest('.comment-container').find('.comment-container').collapse();
-    }
-
-    function upvote(elm)
-    {
-        $(elm)
-                .closest('.images')
-                .find('#thumbs_blue')
-                .toggle();
-
-        $(elm)
-                .closest('.images')
-                .find('#thumbs_gold')
-                .toggle();
-
-
-        send_vote(1, elm);
-
-    }
-
-    function neutral(elm)
-    {
-        $(elm)
-                .closest('.images')
-                .find('#thumbs_gold')
-                .toggle();
-
-        $(elm)
-                .closest('.images')
-                .find('#thumbs_blue')
-                .toggle();
-        send_vote(-1, elm);
-    }
-
-    function send_vote(val, elm)
-    {
-        var id = $(elm).closest('.comment-container').attr('id');
-        $.post("/vote/",
-                {
-                    id:id,
-                    val:val
-                }
-        );
-    }
-
-    function toggle_it(elm)
-    {
-        console.log(elm);
-        console.log($(elm).closest('.comment-group').find('#comments'));
-        $(elm).closest('.comment-group')
-                .find('#comments')
-                .toggle('fast')
-    }
-
-    </script>
-
-</body>
 </html>
