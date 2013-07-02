@@ -136,6 +136,7 @@ def vote():
         {'$set':{'votes':votes}})
     #update the comment to store the vote
     update_comment(cached_comments, ObjectId(id), 'votes', int(val))
+    print mongo.db.comments.find_one({'_id':ObjectId(id)})
     return ''
 
 def update_comment(comment_cache, _id, key, value):
